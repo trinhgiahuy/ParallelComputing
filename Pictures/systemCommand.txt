@@ -1,0 +1,46 @@
+$sudo apt-get install gcc
+
+
+
+fatal error: GL/gl.h: No such file or directory
+   37 | #include <GL/gl.h>
+
+$sudo apt-get install freeglut3-dev
+
+$sudo apt-cache search glut
+$ dpkg -L freeglut3-dev
+/.
+/usr
+/usr/include
+/usr/include/GL
+/usr/include/GL/freeglut.h
+/usr/include/GL/freeglut_ext.h
+/usr/include/GL/freeglut_std.h
+/usr/include/GL/glut.h
+/usr/lib
+/usr/lib/x86_64-linux-gnu
+/usr/lib/x86_64-linux-gnu/libglut.a
+/usr/share
+/usr/share/doc
+/usr/share/doc/freeglut3-dev
+/usr/share/doc/freeglut3-dev/copyright
+/usr/share/doc/freeglut3-dev/download.html
+/usr/share/doc/freeglut3-dev/freeglut.html
+/usr/share/doc/freeglut3-dev/freeglut_logo.png
+/usr/share/doc/freeglut3-dev/freeglut_user_interface.html
+/usr/share/doc/freeglut3-dev/index.html
+/usr/share/doc/freeglut3-dev/ogl_sm.png
+/usr/share/doc/freeglut3-dev/progress.html
+/usr/share/doc/freeglut3-dev/structure.html
+/usr/lib/x86_64-linux-gnu/libglut.so
+/usr/share/doc/freeglut3-dev/changelog.Debian.gz
+
+
+fatal error: CL/cl.h: No such file or directory
+   47 | #include <CL/cl.h>
+
+
+$ sudo apt-get install ocl-icd-opencl-dev
+
+
+
