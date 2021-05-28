@@ -45,16 +45,10 @@ VERSION 20.0 - relax physic correctness check
 #include <GLUT/glut.h>
 #endif
 
-
-
 // OpenCL includes
 //#include <CL/cl.h>
-
 // include GL libabry
 //#include <GL/freeglut.h>
-
-//==================================================This will be included in header file============================
-
 // These are used to decide the window size
 #define WINDOW_HEIGHT 1024
 #define WINDOW_WIDTH 1024
@@ -100,18 +94,11 @@ typedef struct{
    floatvector velocity;
 } satelite;
 
-//============================//============================//============================//============================	
-
-
 // Is used to find out frame times
 int previousFrameTimeSinceStart = 0;
 int previousFinishTime = 0;
 unsigned int frameNumber = 0;
 unsigned int seed = 0;
-
-
-
-
 
 // Pixel buffer which is rendered to the screen
 color* pixels;
@@ -123,61 +110,13 @@ color* correctPixels;
 satelite* satelites;
 satelite* backupSatelites;
 
-
-
 // Add my own additional variable
 // Is used to find out frame times
-
-//#define WG_SIZE_X 8
-//#define WG_SIZE_Y 8
-
 #define TOTAL_PIXEL_SIZE sizeof(color) * SIZE
 #define TOTAL_SATELLITE_SIZE sizeof(satelite) * SATELITE_COUNT
 #define MAX_SOURCE_SIZE (0x100000)
 
-
-
 // ## You may add your own variables here ##
-/*
-typedef struct __attribute__((packed)) _satelite{
-	color identifier;
-	cl_floatvct position;
-	cl_floatvct velocity;
-	
-}satelite;
-typedef struct __attribute__((packed)) _color{
-	cl_float red;
-	cl_float green;
-	cl_float blue;
-} color;
-typedef struct __attribute__ ((packed)) _cl_doublevct{
-   cl_float x;
-   cl_float y;
-} cl_doubletvct;
-typedef struct __attribute__ ((packed)) _cl_floatvct{
-   cl_float x;
-   cl_float y;
-} cl_floatvct;
-*/
-
-
-
-/*
-cl_command_queue Physics_cmd_Queue;
-cl_command_queue Graphics_cmd_Queue;
-cl_context Physics_context;
-cl_context Graphics_context;
-cl_mem Physics_bufSat;
-cl_mem Graphics_bufSat;
-cl_mem bufPix;
-cl_device_id devices;
-cl_program Physics_program;
-cl_program Graphics_program;
-cl_kernel Physics_kernel;
-cl_kernel Graphics_kernel;
-*/
-
-
 cl_int status;
 cl_event kernel_events;
 cl_command_queue physics_cmd_queue = NULL;
@@ -222,216 +161,72 @@ cl_device_id GetDeviceIDs(cl_device_type device_type){
 	platforms = (cl_platform_id*)malloc(sizeof(cl_platform_id)*numPlatforms);
 	status = clGetPlatformIDs(numPlatforms, platforms, NULL);
 	assert(status == CL_SUCCESS);
-
-	/*
-	printf("%d\n",status);
-	if (status < 0){
-		perror("Could not identify the platform");
-	}
-	*/
 	
-
 	for (int i = 0 ; i < numPlatforms; i++){
 	  status = clGetDeviceIDs(platforms[i], device_type, 0, NULL, &numDevices);
 	  cl_device_id* devices = (cl_device_id*)malloc(sizeof(cl_device_id)*numDevices); 
 	  clGetDeviceIDs(platforms[i],device_type,numDevices,devices,NULL);
 	
-	
-	/*
-	printf("%d\n",status);
-	if (status == CL_DEVICE_NOT_FOUND){
-		perror("Could not find the CPU");
-	
-		}
-	*/
-		if (status == CL_SUCCESS){
-	  		return devices[0];
-		}else{
-	  		continue;
-		}
+	  if (status == CL_SUCCESS){
+  		return devices[0];
+	  }else{
+  		continue;
+	  }
 
 	}	
 	printf("End GetDeviceID function\n ()");
 }	
 
-
-/*
-cl_program build_program(cl_context context,cl_device_id devices, const char* source ){
-	
-	
-	FILE* program_handle;
-	char* program_buffer;
-	
-	size_t program_size;
-	int status;
-	
-	/*fopen_s(&program_handle, source, "rb");
-	if (!program_handle){
-	
-		perror("Fail to load program/kernel file");
-		exit(1);
-	}
-	//fseek(program_handle, 0, SEEK_END);
-	//program_size = ftell(program_handle);
-	//rewind(program_handle);
-	//program_buffer = (char*)malloc(program_size+1);
-	//program_buffer[program_size] = '\0';
-	//fread(program_buffer,sizeof(char), program_size, program_handle);
-	//fclose(program_handle);
-	
-	cl_program program;
-	program = clCreateProgramWithSource(context, 1, (const char**)program_buffer,&program_size, &status);
-	printf("%d\n",status);
-	if (status < 0){
-	
-		perror("Could not create the program");
-		//exit(1);
-	}
-	
-	
-	char* program_log;
-	size_t log_size;
-	 // Build (compile) the program for the device
-	status = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-	printf("%d\n",status);
-	if (status < 0){
-	
-		clGetProgramBuildInfo(program, devices, CL_PROGRAM_BUILD_LOG,0,NULL,&log_size);	
-		program_log = (char*)malloc(log_size + 1);		
-		program_log[log_size] = '\0';
-		clGetProgramBuildInfo(program, devices, CL_PROGRAM_BUILD_LOG, log_size+1, program_log,NULL);
-		printf("%s\n",program_log);
-		//exit(1);	
-	}
-	
-	return program;
-		
-}
-*/
-
-
 void set_physics_engine(char *source_str, size_t source_size){
-  printf("Start set_physics_engine funtion ()\n");
+
   //CPU will execute the physics engine
   cl_device_id cpu_id = GetDeviceIDs(CL_DEVICE_TYPE_CPU);
-  //printf("End GetDeviceID function in set_physics_engine\n");
-  //printf("%d\n",cpu_id);
-
-  //======================================================
-/*
-std::vector<Device> devices;
-    std::vector<Platform> platforms; // get all platforms
-    std::vector<Device> devices_available;
-    int n = 0; // number of available devices
-    Platform::get(&platforms);
-    for(int i=0; i<(int)platforms.size(); i++) {
-        devices_available.clear();
-        platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &devices_available);
-        if(devices_available.size()==0) continue; // no device found in plattform i
-        for(int j=0; j<(int)devices_available.size(); j++) {
-            n++;
-            devices.push_back(devices_available[j]);
-        }
-    }
-    if(platforms.size()==0||devices.size()==0) {
-        std::cout << "Error: There are no OpenCL devices available!" << std::endl;
-        return -1;
-    }
-    for(int i=0; i<n; i++) std::cout << "ID: " << i << ", Device: " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
-}*/
-//======================================================
 
   //Create a context for Physics Engine
   physics_context = clCreateContext(NULL,1,&cpu_id,NULL,NULL,&status);
-  printf("1_");
-  printf("%d\n",status);
   assert(status == CL_SUCCESS);
 
-  //Create a cmd queue for Physics Engine
-  
+  //Create a cmd queue for Physics Engine  
   physics_cmd_queue = clCreateCommandQueue(physics_context, cpu_id, 0 , &status);
-  printf("2_");
-  printf("%d\n",status);
   assert(status == CL_SUCCESS);
 
   //Create a buffer for holding satelites data in Physics Engine
 
   physics_satelites_buff = clCreateBuffer(physics_context,CL_MEM_USE_HOST_PTR,TOTAL_SATELLITE_SIZE,satelites,&status);
-  printf("3_");
-  printf("%d\n",status);
   clFinish(physics_cmd_queue);
 
 
   //Create a program from source string
 
   physics_program = clCreateProgramWithSource(physics_context, 1, (const char**)&source_str, (const size_t *)&source_size, &status);  
-  printf("4_");
-  printf("%d\n",status);
   assert(status == CL_SUCCESS);
 
 	
   //Build program and print error if it exists
   //"-cl-fast-relaxed-math"
   status = clBuildProgram(physics_program,1,&cpu_id,option,NULL,NULL); 
-  printf("5_");
-  printf("%d\n",status);
  	
   if (status != CL_SUCCESS){
     if (status == CL_BUILD_PROGRAM_FAILURE) {
-    printf("Build program not success\n");
-    //cl_int status_code;
-    size_t log_len;
+	    size_t log_len;
+	    clGetProgramBuildInfo(physics_program, cpu_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_len);
+	    char* buff_err = malloc(log_len);
+	    clGetProgramBuildInfo(physics_program, cpu_id, CL_PROGRAM_BUILD_LOG, log_len, buff_err, NULL);
+	    printf("%s\n",buff_err);
+	    
+	  // Free resource
+	  free(buff_err);
 
-    clGetProgramBuildInfo(physics_program, cpu_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_len);
-    //printf("status_code %d",status_code);
-
-    char* buff_err = malloc(log_len);
-    clGetProgramBuildInfo(physics_program, cpu_id, CL_PROGRAM_BUILD_LOG, log_len, buff_err, NULL);
-    
+	  printf("6_EXIT FAILURE_");
+	  printf("%d\n",status);
+	  // Exit failure
+	  exit(EXIT_FAILURE);
+  	}
+  }
+	
+  physics_kernel = clCreateKernel(physics_program, "parallelPhysicsEngineKernel",&status); 
    
-    //Print the log
-    printf("%s\n",buff_err);
-    
-	
-    /*	
-    if (status_code){
-      printf("clGetProgramBuildInfo fail at line %d\n", status_code);
-      exit(-1);
-    }
-    buff_err = malloc(log_len);
-    if (!buff_err){
-      printf("Malloc failed at line %d\n", __LINE__);
-      exit(-2);
-    }
-    status_code = clGetProgramBuildInfo(physics_program, cpu_id, CL_PROGRAM_BUILD_LOG, log_len, buff_err, NULL);
-    if (status_code){
-      printf("clGetProgramBuildInfo fail at line %d\n", __LINE__);
-      exit(-3);
-    }*/
-
-
-  // Free resource
-  free(buff_err);
-
-  printf("6_EXIT FAILURE_");
-  printf("%d\n",status);
-  // Exit failure
-  exit(EXIT_FAILURE);
-  }
-  }
-
-  //Start to create a physics engine
-  printf("Start to create a physics engine kernel");
-	
-  physics_kernel = clCreateKernel(physics_program, "parallelPhysicsEngineKernel",&status);
-  //printf("5_");
-  //printf("%d\n",status);
-  
   status = clSetKernelArg(physics_kernel, 0, sizeof(cl_mem), (void*)&physics_satelites_buff);
-  
-  //printf("6_");
-  //printf("%d\n",status);
-  
   assert(status == CL_SUCCESS);
 
   clFinish(physics_cmd_queue);
@@ -491,24 +286,6 @@ void set_graphics_engine(char* source_str, size_t source_size){
    
     //Print the log
     printf("%s\n",buff_err);
-
-    /*
-    clGetProgramBuildInfo(graphics_program, gpu_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_len);
-    if (status_code){
-      printf("clGetProgramBuildInfo fail at line %d\n", __LINE__);
-      exit(-1);
-    }
-    buff_err = malloc(log_len);
-    if (!buff_err){
-      printf("Malloc failed at line %d\n", __LINE__);
-      exit(-2);
-    }
-    status_code = clGetProgramBuildInfo(graphics_program, gpu_id, CL_PROGRAM_BUILD_LOG, log_len, buff_err, NULL);
-    if (status_code){
-      printf("clGetProgramBuildInfo fail at line %d\n", __LINE__);
-      exit(-3);
-    }*/
-
 
     // Free resource
     free(buff_err);
@@ -570,154 +347,6 @@ void init(){
   printf("Finish init function () \n");
 }
 
-
-
-  /*
-	devices = create_device();
-	cl_context context;
-	context = clCreateContext(NULL,1,&devices, NULL,NULL,&status);
-	printf("%d\n",status);
-	if(status < 0){
-		
-		perror("Could not create a context");
-		
-		//exit(1);
-	}
-	
-	
-	
-	program = build_program(context, devices, PROGRAM_SOURCE );
-	
-	 // Create the vector additis<on kernel
-    	cl_kernel kernel;
-    	kernel = clCreateKernel(program, "parallelGraphicEngine", &status);
-    	printf("%d\n",status);
-    	if (status < 0){
-    		
-    		perror("Could not create a kernel");
-    		//exit(1);
-    	}
-    	
-	
-	// Create a buffer that will filled in with satelites' data
-	cl_mem bufSat ;
-	bufSat = clCreateBuffer(context, CL_MEM_READ_ONLY, SATELITE_COUNT*sizeof(satelite), NULL, &status);
-	printf("%d\n",status);
-	if (status < 0){
-		
-		perror("Could not create buffer for satelites");
-		//exit(1);
-	}
-	
-	
-	
-	//Create a buffer that will filled in with pixels ' data
-	cl_mem bufPix;
-	bufPix = clCreateBuffer(context, CL_MEM_READ_WRITE,SIZE*sizeof(color),NULL, &status);
-	printf("%d\n",status);
-	if (status < 0){
-		perror("Could not create buffer for pixels");
-		//exit(1);
-	} 
-	
-	
-	// Create a command queue and associate it with the device 
-    	
-    	cmd_Queue = clCreateCommandQueue(context, devices, 0, &status);
-	printf("%d\n",status);
-	if (status < 0){
-		perror("Could not create a command queue");
-		//exit(1);
-	} 	
-	
-	
-	/*
-	satelite *satelites = NULL;		//input array
-	floatvector *pixel = NULL; // input array 
-	color *pixels = NULL;		//output array
-	
-	//#define SIZE WINDOW_HEIGHT*WINDOW_HEIGHT
-	// 1024 * 1024
-	const int elements = SIZE;
-	
-	
-	//Thess datasize in byte
-	size_t datasize_sat = sizeof(satelite)*elements;
-	size_t datasize_floatvct = sizeof(floatvector)*elements;
-	size_t datasize_col = sizeof(color)*elements;
-	// Allocate space for input/output data
-	//satelite* satelites = (satelite*)malloc(datasize);
-	
-	//allocate dynamic memory in C .
-	//struct st *x = malloc(sizeof *x)
-	// x: must be pointer , no cast require, include appropriate header (stdlib.h)
-	//https://www.learn-c.org/en/Dynamic_allocation
-	
-	
-	//ref : alllocate dynamic memory in OpenCL
-	//https://stackoverflow.com/questions/14259228/memory-object-allocation-in-opencl-for-dynamic-array-in-structure
-	
-	satelites = (satelite*)malloc(datasize_sat);
-	pixel = (floatvector*)malloc(datasize_floatvct);
-	pixels = (color*)malloc(datasize_col);
-	
-	
-	cl_int status;
-	
-	cl_uint numPlatforms = 0;
-	status = clGetPlatformIDs(0,NULL,&numPlatforms);
-	
-	
-	platforms = (cl_platform_id*)malloc(numPlatforms*sizeof(cl_platform_id));
-	
-	cl_uint numDevices = 0;
-	
-    	devices = (cl_device_id*)malloc(numDevices*sizeof(cl_device_id));
-	
-	status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL , numDevices, devices, NULL);
-	 
-    	context = clCreateContext(NULL, numDevices, devices, NULL, NULL, &status);
-	
-	// Create a buffer object that will hold the input data 
-	 
-	// Create a buffer object that will hold the output data 
-	 cl_mem bufCol;
-	 bufCol = clCreateBuffer(context, CL_MEM_WRITE_ONLY,datasize_col,NULL, &status);
-	
-	// Create a program with source code
-    	cl_program program = clCreateProgramWithSource(context, 1, 
-        &programSource, NULL, &status);
-	  
-	
-    	status = clBuildProgram(program, numDevices, devices, NULL, NULL, NULL);
-	
-    	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufCol);
-	
-	// Define an index space (global work size) of work 
-    	// items for execution. A workgroup size (local work size) 
-    	// is not required, but can be used.
-    	size_t globalWorkSize[1];   
- 
-    	// There are 'elements' work-items 
-    	globalWorkSize[0] = elements;
-		    
-	//Free host resource
-	free(satelites);
-	free(pixel);
-	free(pixels);
-	free(platforms);
-	free(devices);
-	
-	
-	
-	
-	//return 0;
-  */
-
-
-
-
-
 // ## You are asked to make this code parallel ##
 // Physics engine loop. (This is called once a frame before graphics engine) 
 // Moves the satelites based on gravity
@@ -726,13 +355,11 @@ void init(){
 
 void parallelPhysicsEngine(){
   
-
   size_t global_size = SATELITE_COUNT;
 
    // Execute the kernel for execution
   status = clEnqueueNDRangeKernel(physics_cmd_queue,physics_kernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
-  
-    clFinish(physics_cmd_queue);
+  clFinish(physics_cmd_queue);
   
 }
 
@@ -764,75 +391,10 @@ void parallelGraphicsEngine(){
   clFinish(graphics_cmd_queue);
 }
 
-  
-  /*
-	//write input array satelite to the device buffer bufSat
-	status = clEnqueueWriteBuffer(cmd_Queue, bufSat, CL_FALSE, 0, SATELITE_COUNT*sizeof(satelite), satelites, 0, NULL, NULL);
-	printf("%d\n",status);
-	if (status < 0){
-	
-		perror("Could not write satelites'data to buffer ");
-		//exit(1);
-	}
-	
-	
-	
-	//write input array pixel to the device buffer bufPix	
-	status = clEnqueueWriteBuffer(cmd_Queue, bufPix, CL_FALSE, 0, SIZE*sizeof(color), pixels, 0, NULL, NULL);
-	printf("%d\n",status);
-	if (status < 0){
-	
-		perror("Could not write pixels'data to buffer ");
-		//exit(1);
-	}
-	
-	
-	// Associate the input and output buffers with the kernel 
-    	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &bufSat);
-	printf("%d\n",status);
-	if (status < 0 ){
-	
-        	perror("Couldn't set satelite kernel Arg");
-        	//exit(1);
-   	}
-    	
-    	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufPix);
-	printf("%d\n",status);
-	if (status < 0 ){
-	
-        	perror("Couldn't set pixel kernel Arg");
-        	//exit(1);
-   	}
-   	
-   	
-   	int global_size_x , global_size_y;
-   	global_size_x = ceil((float)WINDOW_WIDTH/(float)WG_SIZE_X)*WG_SIZE_X;
-   	global_size_y = ceil((float)WINDOW_WIDTH/(float)WG_SIZE_Y)*WG_SIZE_Y;
-   	size_t globalWorkSize[] = {global_size_x, global_size_y};
-   	size_t localWorkSize[] = {WG_SIZE_X,WG_SIZE_Y};
-   	
-	// Execute the kernel for execution
-	status = clEnqueueNDRangeKernel(cmd_Queue, kernel, 1, NULL, globalWorkSize,localWorkSize, 0, NULL, NULL);
-	printf("%d\n",status);
-	if (status < 0){
-	
-		perror("Could not execute kernel");
-		//exit(1);
-	}
-	
-	// Read the device output buffer to the host output array
-    	clEnqueueReadBuffer(cmd_Queue, bufPix, CL_TRUE, 0, SIZE* sizeof(color), pixels, 0, NULL, NULL);	
- 
-	
-  */
-
-
-
 // ## You may add your own destrcution routines here ##
 void destroy(){
 	
   //Free OpenCL resource
-
   clReleaseKernel(physics_kernel);
   clReleaseKernel(graphics_kernel);
   clReleaseCommandQueue(physics_cmd_queue);
@@ -845,13 +407,6 @@ void destroy(){
   clReleaseContext(graphic_context);
   clReleaseContext(physics_context);
 
-  /*clReleaseKernel(kernel);
-	clReleaseProgram(program);
-	clReleaseCommandQueue(cmd_Queue);
-	clReleaseMemObject(bufSat);
-	clReleaseMemObject(bufPix);
-	clReleaseContext(context);
-	*/
 }
 
 
